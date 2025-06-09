@@ -26,17 +26,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
       - name: Install dependencies
-        run: |
-          npm install --save-dev html-validate stylelint stylelint-config-standard eslint eslint-config-standard jest jsdom
+        run: npm ci
 
       - name: Validate HTML
         run: npx html-validate index.html
@@ -85,6 +76,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           message: |
-            СI/CD pipeline failed for ${{ github.repository }}!
+            CI/CD pipeline failed for ${{ github.repository }}!
             Commit: ${{ github.sha }}
             Check: https://github.com/${{ github.repository }}/actions
+```
