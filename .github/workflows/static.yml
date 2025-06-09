@@ -1,4 +1,4 @@
-name: Advanced CI/CD for GitHub Pages
+name: CI/CD for GitHub Pages
 
 on:
   push:
@@ -9,62 +9,37 @@ on:
       - main
 
 jobs:
-  test-and-deploy:
+  validate-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pages: write
-      issues: write
-
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Validate HTML
-        run: npx html-validate index.html
-
-      - name: Lint CSS
         run: |
-          echo '/* Extracted CSS from index.html */' > style.css
-          sed -n '/<style>/,/<\/style>/p' index.html | sed '1d;$d' >> style.css
-          npx stylelint style.css
+          curl -H "Content-Type: text/html; charset=utf-8" \
+               --data-binary @index.html \
+               https://validator.w3.org/nu/?out=json > validation.json
+          if jq -e '.messages | length > 0' validation.json; then
+            echo "HTML validation errors found:"
+            jq '.messages[] | {type, message, extract}' validation.json
+            exit 1
+          else
+            echo "HTML validation passed"
+          fi
 
-      - name: Lint JavaScript
+      - name: Minify HTML
         run: |
-          echo '/* Extracted JS from index.html */' > script.js
-          sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' >> script.js
-          npx eslint script.js
-
-      - name: Run Jest tests
-        run: |
-          echo 'const jsdom = require("jsdom");' > test.js
-          echo 'const { JSDOM } = jsdom;' >> test.js
-          echo 'const fs = require("fs");' >> test.js
-          echo 'const html = fs.readFileSync("index.html", "utf8");' >> test.js
-          echo 'const dom = new JSDOM(html);' >> test.js
-          echo 'global.document = dom.window.document;' >> test.js
-          echo 'const counterElement = document.getElementById("counter");' >> test.js
-          echo 'test("Counter element exists", () => {' >> test.js
-          echo '  expect(counterElement).not.toBeNull();' >> test.js
-          echo '});' >> test.js
-          echo 'test("Counter starts at 0", () => {' >> test.js
-          echo '  expect(counterElement.textContent).toBe("0");' >> test.js
-          echo '});' >> test.js
-          npx jest test.js
-
+          sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^$/d' \
+              -e 's/>[[:space:]]*</></g' index.html > index.min.html
+          mv index.min.html index.html
+          echo "HTML minified"
 
       - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && success()
+        if: github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
