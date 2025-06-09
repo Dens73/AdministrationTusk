@@ -17,6 +17,7 @@ jobs:
       issues: write
 
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -61,6 +62,7 @@ jobs:
           echo '});' >> test.js
           npx jest test.js
 
+
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' && success()
         uses: peaceiris/actions-gh-pages@v4
@@ -68,15 +70,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
           publish_branch: gh-pages
-
-      - name: Notify on failure
-        if: failure()
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: |
-            CI/CD pipeline failed for ${{ github.repository }}!
-            Commit: ${{ github.sha }}
-            Check: https://github.com/${{ github.repository }}/actions
-```
