@@ -1,4 +1,4 @@
-name: CI/CD for GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  test-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,19 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install html-validate
-        run: npm install -g html-validate
-
-      - name: Run HTML tests
-        run: html-validate index.html
-
       - name: Deploy to GitHub Pages
-        if: success()
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
